@@ -27,7 +27,7 @@ public interface ISuggestionRenderer
 {
 	public Component renderSuggestion(PoseStack stack, String value, int x, int y);
 	
-	public static class SuggestionRegistry {
+	public static class Registry {
 		private static final Map<Class<?>, ISuggestionRenderer> REGISTRY = Object2ObjectMaps.synchronize(new Object2ObjectOpenHashMap<>());
 		
 		public static void register(Class<?> clz, ISuggestionRenderer suggestion) {

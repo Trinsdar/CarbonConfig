@@ -1,29 +1,31 @@
 package carbonconfiglib.networking;
 
 import java.util.List;
-import java.util.Map;
 import java.util.function.Supplier;
 
-import carbonconfiglib.impl.internal.EventHandler;
 import carbonconfiglib.networking.carbon.ConfigAnswerPacket;
 import carbonconfiglib.networking.carbon.ConfigRequestPacket;
 import carbonconfiglib.networking.carbon.SaveConfigPacket;
+import carbonconfiglib.networking.forge.RequestConfigPacket;
+import carbonconfiglib.networking.forge.SaveForgeConfigPacket;
 import carbonconfiglib.networking.snyc.BulkSyncPacket;
 import carbonconfiglib.networking.snyc.SyncPacket;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
-import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
-import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
-import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
-import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.network.Connection;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
-import speiger.src.collections.objects.maps.impl.hash.Object2ObjectOpenHashMap;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.network.NetworkEvent;
+import net.minecraftforge.network.NetworkEvent.Context;
+import net.minecraftforge.network.NetworkRegistry;
+import net.minecraftforge.network.PacketDistributor;
+import net.minecraftforge.network.simple.SimpleChannel;
+import net.minecraftforge.server.ServerLifecycleHooks;
 
 /**
  * Copyright 2023 Speiger, Meduris
@@ -43,76 +45,79 @@ import speiger.src.collections.objects.maps.impl.hash.Object2ObjectOpenHashMap;
 public class CarbonNetwork
 {
 	public static final String VERSION = "1.0.0";
-	Map<Class<?>, ResourceLocation> mappedPackets = new Object2ObjectOpenHashMap<>();
+	SimpleChannel channel;
 	
 	public void init() {
-		registerPacket("sync", SyncPacket.class, SyncPacket::new);
-		registerPacket("bulk_sync", BulkSyncPacket.class, BulkSyncPacket::new);
-		registerPacket("config_request", ConfigRequestPacket.class, ConfigRequestPacket::new);
-		registerPacket("config_answer", ConfigAnswerPacket.class, ConfigAnswerPacket::new);
-		registerPacket("config_save", SaveConfigPacket.class, SaveConfigPacket::new);		
-	}
-	
-	private <T extends ICarbonPacket> void registerPacket(String id, Class<T> packet, Supplier<T> creator) {
-		if(FabricLoader.getInstance().getEnvironmentType() == EnvType.CLIENT) {
-			registerClientPacket(id, creator);
-		}
-		registerServerPacket(id, creator);
-	}
-	
-	private <T extends ICarbonPacket> void registerServerPacket(String id, Supplier<T> creator) {
-		ServerPlayNetworking.registerGlobalReceiver(new ResourceLocation("carbonconfig", id), (server, player, handler, buf, responseSender) -> {
-			T packet = creator.get();
-			packet.read(buf);
-			server.execute(() -> packet.process(player));
-		});
-	}
+		channel = NetworkRegistry.newSimpleChannel(new ResourceLocation("carbonconfig", "networking"), () -> VERSION, this::acceptsConnection, this::acceptsConnection);	
+		registerPacket(0, SyncPacket.class, SyncPacket::new);
+		registerPacket(1, BulkSyncPacket.class, BulkSyncPacket::new);
+		registerPacket(2, ConfigRequestPacket.class, ConfigRequestPacket::new);
+		registerPacket(3, ConfigAnswerPacket.class, ConfigAnswerPacket::new);
+		registerPacket(4, SaveConfigPacket.class, SaveConfigPacket::new);
+		registerPacket(5, RequestConfigPacket.class, RequestConfigPacket::new);
+		registerPacket(6, SaveForgeConfigPacket.class, SaveForgeConfigPacket::new);
 		
+	}
 	
-	private <T extends ICarbonPacket> void registerClientPacket(String id, Supplier<T> creator) {
-		ClientPlayNetworking.registerGlobalReceiver(new ResourceLocation("carbonconfig", id), (client, handler, buf, responseSender) -> {
-			T packet = creator.get();
-			packet.read(buf);
-			//Lets hope local players are covered by this, because Fabric MUST SUCK THIS BADLY
-			client.execute(() -> packet.process(client.player));
-		});
+	private boolean acceptsConnection(String version) {
+		return VERSION.equals(version) || NetworkRegistry.ACCEPTVANILLA.equals(version) || NetworkRegistry.ABSENT.equals(version);
+	}
+	
+	private <T extends ICarbonPacket> void registerPacket(int index, Class<T> packet, Supplier<T> creator) {
+		channel.registerMessage(index, packet, this::writePacket, (K) -> readPacket(K, creator), this::handlePacket);
+	}
+	
+	protected void writePacket(ICarbonPacket packet, FriendlyByteBuf buffer) {
+		try { packet.write(buffer); }
+		catch(Exception e) { e.printStackTrace(); }
+	}
+	
+	protected <T extends ICarbonPacket> T readPacket(FriendlyByteBuf buffer, Supplier<T> values) {
+		try {
+			T packet = values.get();
+			packet.read(buffer);
+			return packet;
+		}
+		catch(Exception e) { e.printStackTrace(); }
+		return null;
+	}
+	
+	protected void handlePacket(ICarbonPacket packet, Supplier<NetworkEvent.Context> provider) {
+		try {
+			Context context = provider.get();
+			Player player = getPlayer(context);
+			context.enqueueWork(() -> packet.process(player));
+			context.setPacketHandled(true);
+		}
+		catch(Exception e) { e.printStackTrace(); }
 	}
 	
 	public boolean isInWorld() {
 		return getClientPlayer() != null;
 	}
 	
-	@Environment(EnvType.CLIENT)
+	protected Player getPlayer(Context cont) {
+		Player entity = cont.getSender();
+		return entity != null ? entity : getClientPlayer();
+	}
+	
+	@OnlyIn(Dist.CLIENT)
 	protected Player getClientPlayer() {
 		return Minecraft.getInstance().player;
 	}
 	
-	protected ResourceLocation toId(ICarbonPacket packet) {
-		return mappedPackets.get(packet.getClass());
-	}
-	
-	protected FriendlyByteBuf toData(ICarbonPacket packet) {
-		FriendlyByteBuf buf = PacketByteBufs.create();
-		packet.write(buf);
-		return buf;
-	}
-	
 	public void sendToServer(ICarbonPacket packet) {
-		ClientPlayNetworking.send(toId(packet), toData(packet));
+		channel.send(PacketDistributor.SERVER.noArg(), packet);
 	}
 	
 	public void sendToAllPlayers(ICarbonPacket packet) {
-		ResourceLocation id = toId(packet);
-		FriendlyByteBuf data = toData(packet);
-		for(ServerPlayer player : getAllPlayers()) {
-			ServerPlayNetworking.send(player, id, data);
-		}
+		channel.send(PacketDistributor.NMLIST.with(this::getAllPlayers), packet);
 	}
 	
-	private List<ServerPlayer> getAllPlayers() {
-		List<ServerPlayer> players = new ObjectArrayList<>();
-		for(ServerPlayer player : EventHandler.getServer().getPlayerList().getPlayers()) {
-			if(isInstalledOnClient(player)) players.add(player);
+	private List<Connection> getAllPlayers() {
+		List<Connection> players = new ObjectArrayList<>();
+		for(ServerPlayer player : ServerLifecycleHooks.getCurrentServer().getPlayerList().getPlayers()) {
+			if(isInstalledOnClient(player)) players.add(player.connection.getConnection());
 		}
 		return players;
 	}
@@ -122,23 +127,23 @@ public class CarbonNetwork
 	}
 	
 	public boolean isInstalledOnClient(ServerPlayer player) {
-		return ServerPlayNetworking.canSend(player, new ResourceLocation("carbonconfig", "sync"));
+		return channel.isRemotePresent(player.connection.getConnection());
 	}
 	
-	@Environment(EnvType.CLIENT)
+	@OnlyIn(Dist.CLIENT)
 	public boolean isInstalledOnServerSafe(Player player) {
 		return player instanceof LocalPlayer && isInstalledOnServer((LocalPlayer)player);
 	}
 	
-	@Environment(EnvType.CLIENT)
+	@OnlyIn(Dist.CLIENT)
 	public boolean isInstalledOnServer(LocalPlayer player) {
-		return ClientPlayNetworking.canSend(new ResourceLocation("carbonconfig", "sync"));
+		return channel.isRemotePresent(player.connection.getConnection());
 	}
 	
 	public void sendToPlayer(ICarbonPacket packet, Player player) {
 		if(!(player instanceof ServerPlayer)) {
 			throw new RuntimeException("Sending a Packet to a Player from client is not allowed");
 		}
-		ServerPlayNetworking.send((ServerPlayer)player, toId(packet), toData(packet));
+		channel.send(PacketDistributor.PLAYER.with(() -> ((ServerPlayer)player)), packet);
 	}
 }

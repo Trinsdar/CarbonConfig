@@ -2,12 +2,12 @@ package carbonconfiglib.gui.config;
 
 import carbonconfiglib.gui.api.IConfigNode;
 import carbonconfiglib.gui.screen.ConfigScreen;
-import carbonconfiglib.gui.widgets.CarbonButton;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TextComponent;
+import net.minecraftforge.client.gui.widget.ExtendedButton;
 
 /**
  * Copyright 2023 Speiger, Meduris
@@ -26,7 +26,7 @@ import net.minecraft.network.chat.TextComponent;
  */
 public class FolderElement extends ConfigElement
 {
-	Button button = addChild(new CarbonButton(0, 0, 0, 18, new TextComponent(""), this::onPress));
+	Button button = addChild(new ExtendedButton(0, 0, 0, 18, new TextComponent(""), this::onPress));
 	Component name;
 	
 	public FolderElement(IConfigNode node, Component name)

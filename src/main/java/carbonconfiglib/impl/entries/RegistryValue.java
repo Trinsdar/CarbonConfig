@@ -21,8 +21,10 @@ import carbonconfiglib.utils.ParseResult;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectLinkedOpenHashSet;
 import it.unimi.dsi.fastutil.objects.ObjectSets;
-import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraftforge.registries.ForgeRegistry;
+import net.minecraftforge.registries.IForgeRegistry;
+import net.minecraftforge.registries.IForgeRegistryEntry;
 
 /**
  * Copyright 2023 Speiger, Meduris
@@ -39,20 +41,20 @@ import net.minecraft.resources.ResourceLocation;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-public class RegistryValue<T> extends CollectionConfigEntry<T, Set<T>> implements IArrayConfig
+public class RegistryValue<T extends IForgeRegistryEntry<T>> extends CollectionConfigEntry<T, Set<T>> implements IArrayConfig
 {
-	Registry<T> registry;
+	ForgeRegistry<T> registry;
 	Class<T> clz;
 	Predicate<T> filter;
 	
-	protected RegistryValue(String key, Registry<T> registry, Class<T> clz, Set<T> defaultValue, Predicate<T> filter, String... comment) {
+	protected RegistryValue(String key, IForgeRegistry<T> registry, Class<T> clz, Set<T> defaultValue, Predicate<T> filter, String... comment) {
 		super(key, defaultValue, comment);
-		this.registry = registry;
+		this.registry = (ForgeRegistry<T>)registry;
 		this.clz = clz;
 		this.filter = filter;
 	}
 	
-	public static <E> Builder<E> builder(String key, Class<E> clz) {
+	public static <E extends IForgeRegistryEntry<E>> Builder<E> builder(String key, Class<E> clz) {
 		return new Builder<>(key, clz);
 	}
 	
@@ -84,7 +86,7 @@ public class RegistryValue<T> extends CollectionConfigEntry<T, Set<T>> implement
 		for(int i = 0,m=values.length;i<m;i++) {
 			ResourceLocation location = ResourceLocation.tryParse(values[i]);
 			if(location == null) continue;
-			T entry = registry.get(location);
+			T entry = registry.getValue(location);
 			if(entry == null || (filter != null && !filter.test(entry))) continue;
 			result.add(entry);
 		}
@@ -96,7 +98,7 @@ public class RegistryValue<T> extends CollectionConfigEntry<T, Set<T>> implement
 		ParseResult<Boolean> result = super.canSet(value);
 		if(result.hasError()) return result;
 		for(T entry : value) {
-			if(!registry.getResourceKey(entry).isPresent()) return ParseResult.partial(false, NoSuchElementException::new, "Value ["+entry+"] doesn't exist in the registry");
+			if(!registry.containsValue(entry)) return ParseResult.partial(false, NoSuchElementException::new, "Value ["+entry+"] doesn't exist in the registry");
 			if(filter != null && !filter.test(entry)) return ParseResult.partial(false, IllegalArgumentException::new, "Value ["+registry.getKey(entry)+"] isn't allowed");
 		}
 		return ParseResult.success(true);
@@ -124,7 +126,7 @@ public class RegistryValue<T> extends CollectionConfigEntry<T, Set<T>> implement
 	public ParseResult<Boolean> canSetArray(List<String> entries) {
 		if(entries == null) return ParseResult.partial(false, NullPointerException::new, "Value isn't allowed to be null");
 		for(int i = 0,m=entries.size();i<m;i++) {
-			T result = registry.get(ResourceLocation.tryParse(entries.get(i)));
+			T result = registry.getValue(ResourceLocation.tryParse(entries.get(i)));
 			if(result == null) return ParseResult.partial(false, NoSuchElementException::new, "Value ["+entries.get(i)+"] doesn't exist in the registry");
 			if(filter != null && !filter.test(result)) return ParseResult.partial(false, IllegalArgumentException::new, "Value ["+entries.get(i)+"] isn't allowed");
 		}
@@ -160,7 +162,7 @@ public class RegistryValue<T> extends CollectionConfigEntry<T, Set<T>> implement
 		Set<T> value = getValue();
 		buffer.writeVarInt(value.size());
 		for(T entry : value) {
-			buffer.writeVarInt(registry.getId(entry));
+			buffer.writeVarInt(registry.getID(entry));
 		}
 	}
 
@@ -169,7 +171,7 @@ public class RegistryValue<T> extends CollectionConfigEntry<T, Set<T>> implement
 		Set<T> result = new ObjectLinkedOpenHashSet<>();
 		int size = buffer.readVarInt();
 		for(int i = 0;i<size;i++) {
-			T entry = registry.byId(buffer.readVarInt());
+			T entry = registry.getValue(buffer.readVarInt());
 			if(entry != null) {
 				result.add(entry);
 			}
@@ -181,7 +183,7 @@ public class RegistryValue<T> extends CollectionConfigEntry<T, Set<T>> implement
 		return ObjectSets.singleton(value);
 	}
 	
-	public static class Builder<E> {
+	public static class Builder<E extends IForgeRegistryEntry<E>> {
 		Class<E> clz;
 		String key;
 		Set<E> values = new ObjectLinkedOpenHashSet<>();
@@ -214,13 +216,13 @@ public class RegistryValue<T> extends CollectionConfigEntry<T, Set<T>> implement
 			return this;
 		}
 		
-		public RegistryValue<E> build(Registry<E> registry) {
+		public RegistryValue<E> build(IForgeRegistry<E> registry) {
 			RegistryValue<E> result = new RegistryValue<>(key, registry, clz, values, filter, comments);
 			CarbonConfig.runAfterRegistries(result::loadSuggestions);
 			return result;
 		}
 		
-		public RegistryValue<E> build(Registry<E> registry, ConfigSection section) {
+		public RegistryValue<E> build(IForgeRegistry<E> registry, ConfigSection section) {
 			RegistryValue<E> result = new RegistryValue<>(key, registry, clz, values, filter, comments);
 			CarbonConfig.runAfterRegistries(result::loadSuggestions);
 			section.add(result);

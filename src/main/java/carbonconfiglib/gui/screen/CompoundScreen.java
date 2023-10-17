@@ -4,13 +4,13 @@ import carbonconfiglib.gui.api.*;
 import carbonconfiglib.gui.config.ConfigElement;
 import carbonconfiglib.gui.config.Element;
 import carbonconfiglib.gui.config.ListScreen;
-import carbonconfiglib.gui.widgets.CarbonButton;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.ConfirmScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraftforge.client.gui.widget.ExtendedButton;
 
 import java.util.List;
 import java.util.function.Consumer;
@@ -53,8 +53,8 @@ public class CompoundScreen extends ListScreen
 		super.init();
 		int x = width / 2;
 		int y = height;
-		applyValue = addRenderableWidget(new CarbonButton(x-82, y-27, 80, 20, new TranslatableComponent("gui.carbonconfig.apply"), this::apply));
-		addRenderableWidget(new CarbonButton(x+2, y-27, 80, 20, new TranslatableComponent("gui.carbonconfig.back"), this::goBack));
+		applyValue = addRenderableWidget(new ExtendedButton(x-82, y-27, 80, 20, new TranslatableComponent("gui.carbonconfig.apply"), this::apply));
+		addRenderableWidget(new ExtendedButton(x+2, y-27, 80, 20, new TranslatableComponent("gui.carbonconfig.back"), this::goBack));
 	}
 	
 	@Override

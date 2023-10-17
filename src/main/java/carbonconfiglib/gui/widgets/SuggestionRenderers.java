@@ -4,13 +4,10 @@ import carbonconfiglib.gui.api.ISuggestionRenderer;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import it.unimi.dsi.fastutil.objects.ObjectLists;
-import net.fabricmc.fabric.api.client.render.fluid.v1.FluidRenderHandlerRegistry;
 import net.minecraft.ChatFormatting;
-import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiComponent;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-import net.minecraft.core.Registry;
 import net.minecraft.nbt.IntTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
@@ -29,6 +26,9 @@ import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.EnchantmentInstance;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
+import net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions;
+import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.registries.ForgeRegistries;
 
 /**
  * Copyright 2023 Speiger, Meduris
@@ -52,7 +52,7 @@ public class SuggestionRenderers
 		public Component renderSuggestion(PoseStack stack, String value, int x, int y) {
 			ResourceLocation id = ResourceLocation.tryParse(value);
 			if(id == null) return null;
-			Item item = Registry.ITEM.get(id);
+			Item item = ForgeRegistries.ITEMS.getValue(id);
 			if(item == Items.AIR || item == null) return null;
 			ItemStack itemStack = new ItemStack(item);
 			Minecraft.getInstance().getItemRenderer().renderAndDecorateItem(itemStack, x, y);
@@ -65,24 +65,20 @@ public class SuggestionRenderers
 		public Component renderSuggestion(PoseStack stack, String value, int x, int y) {
 			ResourceLocation id = ResourceLocation.tryParse(value);
 			if(id == null) return null;
-			Fluid fluid = Registry.FLUID.get(id);
+			Fluid fluid = ForgeRegistries.FLUIDS.getValue(id);
 			if(fluid == Fluids.EMPTY || fluid == null) return null;
 			TextureAtlasSprite sprite = getSprite(fluid);
 			if(sprite == null) return null;
 			RenderSystem.setShaderTexture(0, InventoryMenu.BLOCK_ATLAS);
-			int color = FluidRenderHandlerRegistry.INSTANCE.get(fluid).getFluidColor(null, null, fluid.defaultFluidState());
+			int color = fluid.getAttributes().getColor();
 			RenderSystem.setShaderColor((color >> 16 & 255) / 255F, (color >> 8 & 255) / 255F, (color & 255) / 255F, 1F);
 			GuiComponent.blit(stack, x, y, 0, 18, 18, sprite);
 			RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
-			return getDescription(fluid).withStyle(ChatFormatting.YELLOW).append("\n").append(new TextComponent(id.toString()).withStyle(ChatFormatting.GRAY));
-		}
-		
-		private MutableComponent getDescription(Fluid fluid) {
-			return new TranslatableComponent(Util.makeDescriptionId("fluid", Registry.FLUID.getKey(fluid)));
+			return fluid.getAttributes().getDisplayName(new FluidStack(fluid, 1)).copy().withStyle(ChatFormatting.YELLOW).append("\n").append(new TextComponent(id.toString()).withStyle(ChatFormatting.GRAY));
 		}
 		
 		private TextureAtlasSprite getSprite(Fluid fluid) {
-			return FluidRenderHandlerRegistry.INSTANCE.get(fluid).getFluidSprites(null, null, fluid.defaultFluidState())[0];
+			return Minecraft.getInstance().getTextureAtlas(InventoryMenu.BLOCK_ATLAS).apply(fluid.getAttributes().getStillTexture());
 		}
 	}
 	
@@ -91,7 +87,7 @@ public class SuggestionRenderers
 		public Component renderSuggestion(PoseStack stack, String value, int x, int y) {
 			ResourceLocation id = ResourceLocation.tryParse(value);
 			if(id == null) return null;
-			Enchantment ench = Registry.ENCHANTMENT.get(id);
+			Enchantment ench = ForgeRegistries.ENCHANTMENTS.getValue(id);
 			if(ench == null) return null;
 			Minecraft.getInstance().getItemRenderer().renderAndDecorateItem(EnchantedBookItem.createForEnchantment(new EnchantmentInstance(ench, ench.getMinLevel())), x, y);
 			return ench.getFullname(ench.getMinLevel()).copy().withStyle(ChatFormatting.YELLOW).append("\n").append(new TextComponent(id.toString()).withStyle(ChatFormatting.GRAY));
@@ -103,7 +99,7 @@ public class SuggestionRenderers
 		public Component renderSuggestion(PoseStack stack, String value, int x, int y) {
 			ResourceLocation id = ResourceLocation.tryParse(value);
 			if(id == null) return null;
-			MobEffect potion = Registry.MOB_EFFECT.get(id);
+			MobEffect potion = ForgeRegistries.MOB_EFFECTS.getValue(id);
 			if(potion == null) return null;
 			ItemStack item = new ItemStack(Items.POTION);
 			PotionUtils.setCustomEffects(item, ObjectLists.singleton(new MobEffectInstance(potion)));

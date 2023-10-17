@@ -4,7 +4,6 @@ import carbonconfiglib.gui.api.BackgroundTexture;
 import carbonconfiglib.gui.api.IConfigNode;
 import carbonconfiglib.gui.api.IValueNode;
 import carbonconfiglib.gui.config.ElementList;
-import carbonconfiglib.gui.widgets.CarbonButton;
 import carbonconfiglib.utils.ParseResult;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.ChatFormatting;
@@ -15,6 +14,7 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraftforge.client.gui.widget.ExtendedButton;
 
 /**
  * Copyright 2023 Speiger, Meduris
@@ -56,8 +56,8 @@ public class EditStringScreen extends Screen
 	protected void init() {
 		super.init();
 		int x = width / 2 - 100;
-		Button apply = addRenderableWidget(new CarbonButton(x+10, 160, 85, 20, new TranslatableComponent("gui.carbonconfig.apply"), this::save));
-		addRenderableWidget(new CarbonButton(x+105, 160, 85, 20, new TranslatableComponent("gui.carbonconfig.cancel"), this::cancel));
+		Button apply = addRenderableWidget(new ExtendedButton(x+10, 160, 85, 20, new TranslatableComponent("gui.carbonconfig.apply"), this::save));
+		addRenderableWidget(new ExtendedButton(x+105, 160, 85, 20, new TranslatableComponent("gui.carbonconfig.cancel"), this::cancel));
 		textBox = new EditBox(font, x, 113, 200, 18, new TextComponent(""));
 		addRenderableWidget(textBox);
 		textBox.setValue(value.get());

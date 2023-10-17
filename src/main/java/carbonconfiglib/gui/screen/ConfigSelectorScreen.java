@@ -9,7 +9,6 @@ import carbonconfiglib.gui.config.ConfigElement.GuiAlign;
 import carbonconfiglib.gui.config.Element;
 import carbonconfiglib.gui.config.IIgnoreSearch;
 import carbonconfiglib.gui.config.ListScreen;
-import carbonconfiglib.gui.widgets.CarbonButton;
 import carbonconfiglib.gui.widgets.CarbonIconButton;
 import carbonconfiglib.gui.widgets.GuiUtils;
 import carbonconfiglib.gui.widgets.Icon;
@@ -24,6 +23,7 @@ import net.minecraft.locale.Language;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraftforge.client.gui.widget.ExtendedButton;
 
 import java.util.List;
 import java.util.function.Consumer;
@@ -66,7 +66,7 @@ public class ConfigSelectorScreen extends ListScreen
 		super.init();
 		int x = width / 2;
 		int y = height;
-		addRenderableWidget(new CarbonButton(x-80, y-27, 160, 20, new TranslatableComponent("gui.carbonconfig.back"), T -> onClose()));
+		addRenderableWidget(new ExtendedButton(x-80, y-27, 160, 20, new TranslatableComponent("gui.carbonconfig.back"), T -> onClose()));
 	}
 	
 	@Override
@@ -170,11 +170,11 @@ public class ConfigSelectorScreen extends ListScreen
 		public void init() {
 			multi = shouldCreatePick();
 			if(multi) {
-				button = new CarbonButton(0, 0, 82, 20, new TranslatableComponent("gui.carbonconfig.pick_file"), this::onPick);
+				button = new ExtendedButton(0, 0, 82, 20, new TranslatableComponent("gui.carbonconfig.pick_file"), this::onPick);
 				children.add(button);
 			}
 			else {
-				button = new CarbonButton(0, 0, 60, 20, new TranslatableComponent("gui.carbonconfig.modify"), this::onEdit);
+				button = new ExtendedButton(0, 0, 60, 20, new TranslatableComponent("gui.carbonconfig.modify"), this::onEdit);
 				reset = new CarbonIconButton(0, 0, 20, 20, Icon.REVERT, new TextComponent(""), this::reset).setIconOnly();
 				reset.active = !handler.isDefault() && !isInWorldConfig();
 				children.add(button);

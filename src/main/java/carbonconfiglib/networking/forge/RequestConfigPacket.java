@@ -1,16 +1,19 @@
-package carbonconfiglib.networking.carbon;
+package carbonconfiglib.networking.forge;
 
+import java.nio.file.Files;
 import java.util.UUID;
 
 import carbonconfiglib.CarbonConfig;
-import carbonconfiglib.config.ConfigHandler;
 import carbonconfiglib.networking.ICarbonPacket;
-import carbonconfiglib.utils.MultilinePolicy;
+import carbonconfiglib.networking.carbon.ConfigAnswerPacket;
 import io.netty.buffer.Unpooled;
 import net.minecraft.client.server.IntegratedServer;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.entity.player.Player;
+import net.minecraftforge.fml.config.ConfigTracker;
+import net.minecraftforge.fml.config.ModConfig;
+import net.minecraftforge.fml.config.ModConfig.Type;
 import net.minecraftforge.server.ServerLifecycleHooks;
 
 /**
@@ -28,28 +31,33 @@ import net.minecraftforge.server.ServerLifecycleHooks;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-public class ConfigRequestPacket implements ICarbonPacket
+public class RequestConfigPacket implements ICarbonPacket
 {
-	UUID id;
-	String identifier;
+	ModConfig.Type type;
+	UUID requestId;
+	String modId;
 	
-	public ConfigRequestPacket() {}
-	
-	public ConfigRequestPacket(UUID id, String identifier) {
-		this.id = id;
-		this.identifier = identifier;
+	public RequestConfigPacket() {
 	}
-
+	
+	public RequestConfigPacket(Type type, UUID requestId, String modId) {
+		this.type = type;
+		this.requestId = requestId;
+		this.modId = modId;
+	}
+	
 	@Override
 	public void write(FriendlyByteBuf buffer) {
-		buffer.writeUUID(id);
-		buffer.writeUtf(identifier, 32767);
+		buffer.writeEnum(type);
+		buffer.writeUUID(requestId);
+		buffer.writeUtf(modId, 32767);
 	}
 	
 	@Override
 	public void read(FriendlyByteBuf buffer) {
-		id = buffer.readUUID();
-		identifier = buffer.readUtf(32767);
+		type = buffer.readEnum(ModConfig.Type.class);
+		requestId = buffer.readUUID();
+		modId = buffer.readUtf(32767);
 	}
 	
 	@Override
@@ -57,13 +65,32 @@ public class ConfigRequestPacket implements ICarbonPacket
 		if(!canIgnorePermissionCheck() && !player.hasPermissions(4)) {
 			return;
 		}
-		ConfigHandler handler = CarbonConfig.CONFIGS.getConfig(identifier);
-		if(handler == null) return;
+		ModConfig config = findConfig();
+		if(config == null) return;
+		byte[] result = getData(config);
+		if(result == null) return;
 		FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
-		buf.writeUtf(handler.getConfig().serialize(MultilinePolicy.DISABLED), 262144);
+		buf.writeByteArray(result);
 		byte[] data = new byte[buf.writerIndex()];
 		buf.readBytes(data);
-		CarbonConfig.NETWORK.sendToPlayer(new ConfigAnswerPacket(id, data), player);
+		CarbonConfig.NETWORK.sendToPlayer(new ConfigAnswerPacket(requestId, data), player);
+	}
+	
+	private byte[] getData(ModConfig config) {
+		try {
+			return Files.readAllBytes(config.getFullPath());
+		}
+		catch(Exception e) {
+			e.printStackTrace();
+		}
+		return null;
+	}
+	
+	private ModConfig findConfig() {
+		for(ModConfig config : ConfigTracker.INSTANCE.configSets().get(type)) {
+			if(modId.equalsIgnoreCase(config.getModId())) return config;
+		}
+		return null;
 	}
 	
 	private boolean canIgnorePermissionCheck() {

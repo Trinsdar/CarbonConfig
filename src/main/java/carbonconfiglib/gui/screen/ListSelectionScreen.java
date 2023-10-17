@@ -5,7 +5,6 @@ import carbonconfiglib.gui.api.*;
 import carbonconfiglib.gui.config.Element;
 import carbonconfiglib.gui.config.ElementList;
 import carbonconfiglib.gui.config.ListScreen;
-import carbonconfiglib.gui.widgets.CarbonButton;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.components.Button;
@@ -14,6 +13,7 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraftforge.client.gui.widget.ExtendedButton;
 
 import java.util.Comparator;
 import java.util.List;
@@ -68,8 +68,8 @@ public abstract class ListSelectionScreen extends ListScreen
 		visibleList.setCallback(T -> setValue(((SelectionElement)T).getSuggestion().getValue()));
 		int x = width / 2 - 100;
 		int y = height;
-		apply = addRenderableWidget(new CarbonButton(x+10, y-27, 85, 20, new TranslatableComponent("gui.carbonconfig.pick"), this::save));
-		addRenderableWidget(new CarbonButton(x+105, y-27, 85, 20, new TranslatableComponent("gui.carbonconfig.cancel"), this::cancel));
+		apply = addRenderableWidget(new ExtendedButton(x+10, y-27, 85, 20, new TranslatableComponent("gui.carbonconfig.pick"), this::save));
+		addRenderableWidget(new ExtendedButton(x+105, y-27, 85, 20, new TranslatableComponent("gui.carbonconfig.cancel"), this::cancel));
 	}
 	
 	public ListSelectionScreen withListener(Runnable success, Runnable abort) {
@@ -209,7 +209,7 @@ public abstract class ListSelectionScreen extends ListScreen
 			if(loaded) return renderer;
 			loaded = true;
 			if(suggestion.getExtra() != null) {
-				renderer = ISuggestionRenderer.SuggestionRegistry.getRendererForType(suggestion.getExtra());	
+				renderer = ISuggestionRenderer.Registry.getRendererForType(suggestion.getExtra());	
 			}
 			return renderer;
 		}

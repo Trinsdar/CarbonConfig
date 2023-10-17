@@ -6,7 +6,7 @@ import carbonconfiglib.api.ConfigType;
 import carbonconfiglib.gui.api.BackgroundTexture;
 import carbonconfiglib.gui.api.IModConfig;
 import carbonconfiglib.gui.api.IModConfigs;
-import net.fabricmc.loader.api.ModContainer;
+import net.minecraftforge.fml.ModContainer;
 import speiger.src.collections.objects.lists.ObjectArrayList;
 
 public class ModConfigList implements IModConfigs
@@ -25,7 +25,7 @@ public class ModConfigList implements IModConfigs
 	
 	@Override
 	public String getModName() {
-		return container.getMetadata().getName();
+		return container.getModInfo().getDisplayName();
 	}
 	
 	@Override

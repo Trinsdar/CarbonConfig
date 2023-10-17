@@ -3,8 +3,12 @@ package carbonconfiglib.gui.screen;
 import carbonconfiglib.gui.api.BackgroundTexture;
 import carbonconfiglib.gui.api.IConfigNode;
 import carbonconfiglib.gui.api.IModConfig;
-import carbonconfiglib.gui.config.*;
-import carbonconfiglib.gui.widgets.CarbonButton;
+import carbonconfiglib.gui.config.ArrayElement;
+import carbonconfiglib.gui.config.CompoundElement;
+import carbonconfiglib.gui.config.Element;
+import carbonconfiglib.gui.config.FolderElement;
+import carbonconfiglib.gui.config.ListScreen;
+import carbonconfiglib.gui.config.SelectionElement;
 import carbonconfiglib.gui.widgets.CarbonIconCheckbox;
 import carbonconfiglib.gui.widgets.Icon;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -18,6 +22,7 @@ import net.minecraft.client.gui.screens.ConfirmScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraftforge.client.gui.widget.ExtendedButton;
 
 import java.util.Comparator;
 import java.util.List;
@@ -79,13 +84,13 @@ public class ConfigScreen extends ListScreen
 		int x = width / 2 - 100;
 		int y = height;
 		if(node.isRoot()) {
-			addRenderableWidget(new CarbonButton(x-51, y-27, 100, 20, new TranslatableComponent("gui.carbonconfig.save"), this::save));
-			addRenderableWidget(new CarbonButton(x+51, y-27, 100, 20, new TranslatableComponent("gui.carbonconfig.reset"), this::reset));
-			addRenderableWidget(new CarbonButton(x+153, y-27, 100, 20, new TranslatableComponent("gui.carbonconfig.back"), this::goBack));
+			addRenderableWidget(new ExtendedButton(x-51, y-27, 100, 20, new TranslatableComponent("gui.carbonconfig.save"), this::save));
+			addRenderableWidget(new ExtendedButton(x+51, y-27, 100, 20, new TranslatableComponent("gui.carbonconfig.reset"), this::reset));
+			addRenderableWidget(new ExtendedButton(x+153, y-27, 100, 20, new TranslatableComponent("gui.carbonconfig.back"), this::goBack));
 		}
 		else {
-			addRenderableWidget(new CarbonButton(x+101, y-27, 100, 20, new TranslatableComponent("gui.carbonconfig.back"), this::goBack));
-			addRenderableWidget(new CarbonButton(x-1, y-27, 100, 20, new TranslatableComponent("gui.carbonconfig.home"), this::goToRoot));
+			addRenderableWidget(new ExtendedButton(x+101, y-27, 100, 20, new TranslatableComponent("gui.carbonconfig.back"), this::goBack));
+			addRenderableWidget(new ExtendedButton(x-1, y-27, 100, 20, new TranslatableComponent("gui.carbonconfig.home"), this::goToRoot));
 		}
 		if(shouldHaveSearch()) {
 			deepSearch = addRenderableWidget(new CarbonIconCheckbox(x+205, 25, 20, 20, Icon.SEARCH_SELECTED, Icon.SEARCH, false).withListener(this::onDeepSearch).setTooltip(this, "gui.carbonconfig.deepsearch"));

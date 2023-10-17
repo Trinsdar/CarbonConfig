@@ -8,7 +8,6 @@ import carbonconfiglib.gui.config.CompoundElement;
 import carbonconfiglib.gui.config.ConfigElement;
 import carbonconfiglib.gui.config.Element;
 import carbonconfiglib.gui.config.ListScreen;
-import carbonconfiglib.gui.widgets.CarbonButton;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.components.Button;
@@ -16,6 +15,7 @@ import net.minecraft.client.gui.screens.ConfirmScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraftforge.client.gui.widget.ExtendedButton;
 
 import java.util.List;
 import java.util.function.Consumer;
@@ -56,9 +56,9 @@ public class ArrayScreen extends ListScreen
 		super.init();
 		int x = width / 2;
 		int y = height;
-		addRenderableWidget(new CarbonButton(x-92, y-27, 80, 20, new TranslatableComponent("gui.carbonconfig.apply"), this::apply));
-		addRenderableWidget(new CarbonButton(x-10, y-27, 20, 20, new TextComponent("+"), this::createEntry));
-		addRenderableWidget(new CarbonButton(x+12, y-27, 80, 20, new TranslatableComponent("gui.carbonconfig.back"), this::goBack));
+		addRenderableWidget(new ExtendedButton(x-92, y-27, 80, 20, new TranslatableComponent("gui.carbonconfig.apply"), this::apply));
+		addRenderableWidget(new ExtendedButton(x-10, y-27, 20, 20, new TextComponent("+"), this::createEntry));
+		addRenderableWidget(new ExtendedButton(x+12, y-27, 80, 20, new TranslatableComponent("gui.carbonconfig.back"), this::goBack));
 	}
 	
 	@Override

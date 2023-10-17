@@ -6,7 +6,6 @@ import carbonconfiglib.gui.api.IModConfig.IConfigTarget;
 import carbonconfiglib.gui.api.IModConfig.WorldConfigTarget;
 import carbonconfiglib.gui.config.Element;
 import carbonconfiglib.gui.config.ListScreen;
-import carbonconfiglib.gui.widgets.CarbonButton;
 import carbonconfiglib.gui.widgets.GuiUtils;
 import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -22,6 +21,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.world.level.storage.LevelSummary;
+import net.minecraftforge.client.gui.widget.ExtendedButton;
 
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -68,7 +68,7 @@ public class SelectFileScreen extends ListScreen
 		super.init();
 		int x = width / 2;
 		int y = height;
-		addRenderableWidget(new CarbonButton(x-80, y-27, 160, 20, new TranslatableComponent("gui.carbonconfig.back"), T -> onClose()));
+		addRenderableWidget(new ExtendedButton(x-80, y-27, 160, 20, new TranslatableComponent("gui.carbonconfig.back"), T -> onClose()));
 	}
 	
 	@Override
@@ -119,7 +119,7 @@ public class SelectFileScreen extends ListScreen
 		
 		@Override
 		public void init() {
-			button = new CarbonButton(0, 0, 62, 20, new TranslatableComponent("gui.carbonconfig.pick"), this::onPick);
+			button = new ExtendedButton(0, 0, 62, 20, new TranslatableComponent("gui.carbonconfig.pick"), this::onPick);
 			if(target instanceof WorldConfigTarget) {
 				WorldConfigTarget world = (WorldConfigTarget)target;
 				LevelSummary sum = world.getSummary();
