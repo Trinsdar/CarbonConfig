@@ -1,9 +1,10 @@
 package carbonconfiglib.gui.api;
 
-import java.util.List;
-
 import carbonconfiglib.config.ConfigEntry.Suggestion;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TextComponent;
+
+import java.util.List;
 
 /**
  * Copyright 2023 Speiger, Meduris
@@ -51,5 +52,5 @@ public interface IConfigFolderNode extends IConfigNode
 	@Override
 	public default boolean requiresReload() { return false; }
 	@Override
-	public default Component getTooltip() { return Component.empty(); }
+	public default Component getTooltip() { return new TextComponent(""); }
 }

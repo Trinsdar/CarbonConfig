@@ -1,22 +1,18 @@
 package carbonconfiglib.gui.impl.carbon;
 
-import java.util.List;
-
-import org.apache.logging.log4j.util.Strings;
-
 import carbonconfiglib.config.ConfigEntry;
 import carbonconfiglib.config.ConfigEntry.IArrayConfig;
 import carbonconfiglib.config.ConfigEntry.Suggestion;
-import carbonconfiglib.gui.api.DataType;
-import carbonconfiglib.gui.api.IArrayNode;
-import carbonconfiglib.gui.api.ICompoundNode;
-import carbonconfiglib.gui.api.IConfigNode;
-import carbonconfiglib.gui.api.IValueNode;
+import carbonconfiglib.gui.api.*;
 import carbonconfiglib.impl.ReloadMode;
 import it.unimi.dsi.fastutil.objects.ObjectLists;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.network.chat.TextComponent;
+import org.apache.logging.log4j.util.Strings;
+
+import java.util.List;
 
 /**
  * Copyright 2023 Speiger, Meduris
@@ -107,14 +103,14 @@ public class ConfigLeaf implements IConfigNode
 	
 	@Override
 	public Component getTooltip() {
-		MutableComponent comp = Component.empty();
-		comp.append(Component.literal(entry.getKey()).withStyle(ChatFormatting.YELLOW));
+		MutableComponent comp = new TextComponent("");
+		comp.append(new TextComponent(entry.getKey()).withStyle(ChatFormatting.YELLOW));
 		String[] array = entry.getComment();
 		if(array != null && array.length > 0) {
 			for(int i = 0;i<array.length;comp.append("\n").append(array[i++]).withStyle(ChatFormatting.GRAY));
 		}
 		String limit = entry.getLimitations();
-		if(!Strings.isBlank(limit)) comp.append("\n").append(Component.literal(limit).withStyle(ChatFormatting.BLUE));
+		if(!Strings.isBlank(limit)) comp.append("\n").append(new TextComponent(limit).withStyle(ChatFormatting.BLUE));
 		return comp;
 	}
 }

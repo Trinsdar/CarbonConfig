@@ -1,21 +1,18 @@
 package carbonconfiglib.gui.impl.carbon;
 
-import java.util.Arrays;
-import java.util.List;
-
 import carbonconfiglib.config.ConfigEntry;
 import carbonconfiglib.config.ConfigEntry.IArrayConfig;
-import carbonconfiglib.gui.api.DataType;
-import carbonconfiglib.gui.api.IArrayNode;
-import carbonconfiglib.gui.api.ICompoundNode;
-import carbonconfiglib.gui.api.INode;
-import carbonconfiglib.gui.api.IValueNode;
+import carbonconfiglib.gui.api.*;
 import carbonconfiglib.gui.impl.carbon.CompoundNode.CompoundValue;
 import carbonconfiglib.utils.Helpers;
 import carbonconfiglib.utils.ParseResult;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectLists;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TextComponent;
+
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * Copyright 2023 Speiger, Meduris
@@ -269,7 +266,7 @@ public class CompoundArrayNode implements IArrayNode
 		
 		@Override
 		public Component getName(int index) {
-			return Component.literal(names[index]);
+			return new TextComponent(names[index]);
 		}
 		
 	}

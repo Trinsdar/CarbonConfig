@@ -1,27 +1,23 @@
 package carbonconfiglib.gui.screen;
 
-import java.util.Comparator;
-import java.util.List;
-import java.util.function.Consumer;
-
-import com.mojang.blaze3d.vertex.PoseStack;
-
 import carbonconfiglib.config.ConfigEntry.Suggestion;
-import carbonconfiglib.gui.api.BackgroundTexture;
-import carbonconfiglib.gui.api.ICompoundNode;
-import carbonconfiglib.gui.api.IConfigNode;
-import carbonconfiglib.gui.api.INode;
-import carbonconfiglib.gui.api.ISuggestionRenderer;
-import carbonconfiglib.gui.api.IValueNode;
+import carbonconfiglib.gui.api.*;
 import carbonconfiglib.gui.config.Element;
 import carbonconfiglib.gui.config.ElementList;
 import carbonconfiglib.gui.config.ListScreen;
 import carbonconfiglib.gui.widgets.CarbonButton;
+import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.ConfirmScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TextComponent;
+import net.minecraft.network.chat.TranslatableComponent;
+
+import java.util.Comparator;
+import java.util.List;
+import java.util.function.Consumer;
 
 /**
  * Copyright 2023 Speiger, Meduris
@@ -72,8 +68,8 @@ public abstract class ListSelectionScreen extends ListScreen
 		visibleList.setCallback(T -> setValue(((SelectionElement)T).getSuggestion().getValue()));
 		int x = width / 2 - 100;
 		int y = height;
-		apply = addRenderableWidget(new CarbonButton(x+10, y-27, 85, 20, Component.translatable("gui.carbonconfig.pick"), this::save));
-		addRenderableWidget(new CarbonButton(x+105, y-27, 85, 20, Component.translatable("gui.carbonconfig.cancel"), this::cancel));
+		apply = addRenderableWidget(new CarbonButton(x+10, y-27, 85, 20, new TranslatableComponent("gui.carbonconfig.pick"), this::save));
+		addRenderableWidget(new CarbonButton(x+105, y-27, 85, 20, new TranslatableComponent("gui.carbonconfig.cancel"), this::cancel));
 	}
 	
 	public ListSelectionScreen withListener(Runnable success, Runnable abort) {
@@ -137,7 +133,7 @@ public abstract class ListSelectionScreen extends ListScreen
 			minecraft.setScreen(new ConfirmScreen(T -> {
 				if(T) abort();
 				minecraft.setScreen(T ? parent : this);	
-			}, Component.translatable("gui.carbonconfig.warn.changed"), Component.translatable("gui.carbonconfig.warn.changed.desc").withStyle(ChatFormatting.GRAY)));
+			}, new TranslatableComponent("gui.carbonconfig.warn.changed"), new TranslatableComponent("gui.carbonconfig.warn.changed.desc").withStyle(ChatFormatting.GRAY)));
 			return;
 		}
 		abort();
@@ -192,7 +188,7 @@ public abstract class ListSelectionScreen extends ListScreen
 		
 		
 		public SelectionElement(Suggestion suggestion, ElementList list) {
-			super(Component.translatable(suggestion.getName()));
+			super(new TranslatableComponent(suggestion.getName()));
 			this.suggestion = suggestion;
 			this.myList = list;
 		}
@@ -206,7 +202,7 @@ public abstract class ListSelectionScreen extends ListScreen
 					owner.addTooltips(comp);
 				}
 			}
-			renderText(poseStack, Component.empty().withStyle(myList.getSelected() == this ? ChatFormatting.YELLOW : ChatFormatting.WHITE).append(name), left+(renderer != null ? 20 : 0), top+6, 0xFFFFFFFF);
+			renderText(poseStack, new TextComponent("").withStyle(myList.getSelected() == this ? ChatFormatting.YELLOW : ChatFormatting.WHITE).append(name), left+(renderer != null ? 20 : 0), top+6, 0xFFFFFFFF);
 		}
 		
 		private ISuggestionRenderer getRenderer() {
