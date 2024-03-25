@@ -1,19 +1,21 @@
 package carbonconfiglib.gui.screen;
 
-import java.util.List;
 import java.util.function.Consumer;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 
 import carbonconfiglib.gui.api.BackgroundTexture.BackgroundHolder;
-import carbonconfiglib.gui.api.DataType;
 import carbonconfiglib.gui.api.IArrayNode;
-import carbonconfiglib.gui.api.IConfigNode;
+import carbonconfiglib.gui.api.INode;
+import carbonconfiglib.gui.api.IValueNode;
+import carbonconfiglib.gui.config.ArrayElement;
 import carbonconfiglib.gui.config.CompoundElement;
 import carbonconfiglib.gui.config.ConfigElement;
 import carbonconfiglib.gui.config.Element;
 import carbonconfiglib.gui.config.ListScreen;
+import carbonconfiglib.gui.screen.ListSelectionScreen.NodeSupplier;
 import carbonconfiglib.gui.widgets.CarbonButton;
+import carbonconfiglib.utils.structure.IStructuredData.StructureType;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.ConfirmScreen;
@@ -38,16 +40,15 @@ import net.minecraft.network.chat.Component;
 public class ArrayScreen extends ListScreen
 {
 	Screen prev;
-	IConfigNode entry;
 	IArrayNode array;
-	List<DataType> type;
+	StructureType innerType;
+	Runnable closeListener;
 	
-	public ArrayScreen(IConfigNode entry, Screen prev, BackgroundHolder customTexture) {
+	public ArrayScreen(IArrayNode entry, Screen prev, BackgroundHolder customTexture) {
 		super(entry.getName(), customTexture);
 		this.prev = prev;
-		this.entry = entry;
-		this.array = entry.asArray();
-		this.type = entry.getDataType();
+		this.array = entry;
+		this.innerType = entry.getInnerType();
 		array.createTemp();
 	}
 	
@@ -71,9 +72,19 @@ public class ArrayScreen extends ListScreen
 		return false;
 	}
 	
+	public void setAbortListener(Runnable run) {
+		this.closeListener = run;
+	}
+	
+	private void notifyClose() {
+		array.setPrevious();
+		if(closeListener == null) return;
+		closeListener.run();
+	}
+	
 	@Override
 	public void onClose() {
-		array.setPrevious();
+		notifyClose();
 		minecraft.setScreen(prev);
 	}
 	
@@ -96,15 +107,24 @@ public class ArrayScreen extends ListScreen
 	
 	@Override
 	protected void collectElements(Consumer<Element> elements) {
-		if(type.size() > 1) {
-			for(int i = 0,m=array.size();i<m;i++) {
-				elements.accept(new CompoundElement(entry, array, array.asCompound(i)));
-			}
-			return;
-		}
-		for(int i = 0,m=array.size();i<m;i++) {
-			ConfigElement element = type.get(0).create(entry, array, i);
-			if(element != null) elements.accept(element);
+		switch(innerType) {
+			case COMPOUND:
+				for(int i = 0,m=array.size();i<m;i++) {
+					elements.accept(new CompoundElement(array, array.get(i).asCompound()));
+				}
+				break;
+			case LIST:
+				for(int i = 0,m=array.size();i<m;i++) {
+					elements.accept(new ArrayElement(array, array.get(i).asArray()));
+				}
+				break;
+			case SIMPLE:
+				for(int i = 0,m=array.size();i<m;i++) {
+					IValueNode node = array.get(i).asValue();
+					ConfigElement element = node.getDataType().create(array, node);
+					if(element != null) elements.accept(element);
+				}
+				break;
 		}
 	}
 	
@@ -117,8 +137,8 @@ public class ArrayScreen extends ListScreen
 	public void createEntry(Button button) {
 		int size = array.size();
 		array.createNode();
-		if(entry.getValidValues().size() > 0) {
-			ListSelectionScreen screen = entry.getDataType().size() > 1 ? ListSelectionScreen.ofCompound(prev, entry, array.asCompound(size), getCustomTexture()) : ListSelectionScreen.ofValue(prev, entry, array.asValue(size), getCustomTexture());
+		if(array.getSuggestions().size() > 0) {
+			ListSelectionScreen screen = new ListSelectionScreen(this, array.get(size), innerType == StructureType.COMPOUND ? NodeSupplier.ofCompound(array) : NodeSupplier.ofValue(), getCustomTexture());
 			screen.withListener(() -> postCreate(size, true), () -> array.removeNode(size)).disableAbortWarning();
 			minecraft.setScreen(screen);
 			return;
@@ -127,18 +147,28 @@ public class ArrayScreen extends ListScreen
 	}
 	
 	private void postCreate(int size, boolean reopen) {
-		if(type.size() > 1) {
-			CompoundScreen screen = new CompoundScreen(entry, array.asCompound(size), this, getCustomTexture());
-			screen.setAbortListener(() -> array.removeNode(size));
-			minecraft.setScreen(screen);
-			lastScroll = Double.MAX_VALUE;
-			return;
-		}
-		ConfigElement element = type.get(0).create(entry, array, size);
-		if(element != null) {
-			addEntry(element);
-			visibleList.addElement(element);
-			visibleList.setScrollAmount(visibleList.getMaxScroll(), true);
+		INode node = array.get(size);
+		switch(node.getNodeType()) {
+			case COMPOUND:
+				CompoundScreen compoundScreen = new CompoundScreen(node.asCompound(), this, getCustomTexture());
+				compoundScreen.setAbortListener(() -> array.removeNode(size));
+				minecraft.setScreen(compoundScreen);
+				lastScroll = Double.MAX_VALUE;
+				break;
+			case LIST:
+				ArrayScreen arrayScreen = new ArrayScreen(node.asArray(), this, getCustomTexture());
+				arrayScreen.setAbortListener(() -> array.removeNode(size));
+				minecraft.setScreen(arrayScreen);
+				lastScroll = Double.MAX_VALUE;
+				break;
+			case SIMPLE:
+				ConfigElement element = node.asValue().getDataType().create(array, node.asValue());
+				if(element != null) {
+					addEntry(element);
+					visibleList.addElement(element);
+					visibleList.setScrollAmount(visibleList.getMaxScroll(), true);
+				}				
+				break;
 		}
 		if(reopen) minecraft.setScreen(this);
 	}

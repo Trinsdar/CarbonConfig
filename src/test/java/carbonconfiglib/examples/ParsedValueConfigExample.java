@@ -7,10 +7,10 @@ import carbonconfiglib.config.ConfigEntry.ParsedValue;
 import carbonconfiglib.config.ConfigHandler;
 import carbonconfiglib.config.ConfigSection;
 import carbonconfiglib.impl.entries.ColorValue.ColorWrapper;
-import carbonconfiglib.utils.Helpers;
-import carbonconfiglib.utils.IEntryDataType.CompoundDataType;
-import carbonconfiglib.utils.IEntryDataType.EntryDataType;
 import carbonconfiglib.utils.ParseResult;
+import carbonconfiglib.utils.ParsedCollections.ParsedMap;
+import carbonconfiglib.utils.structure.IStructuredData.EntryDataType;
+import carbonconfiglib.utils.structure.StructureCompound.CompoundBuilder;
 
 public class ParsedValueConfigExample
 {
@@ -24,14 +24,17 @@ public class ParsedValueConfigExample
 		ConfigSection section = config.add("parsedValue");
 		
 		// Structure information for the Gui/Config that is used for config comments and for the layout in the config Gui!
-		CompoundDataType type = new CompoundDataType().with("Name", EntryDataType.STRING).with("Year", EntryDataType.INTEGER).with("Fluffyness", EntryDataType.DOUBLE).withCustom("Favorite Color", ColorWrapper.class, EntryDataType.INTEGER);
+		CompoundBuilder builder = new CompoundBuilder();
+		builder.simple("Name", EntryDataType.STRING).finish();
+		builder.simple("Year", EntryDataType.INTEGER).finish();
+		builder.variants("Favorite Color", EntryDataType.INTEGER, ColorWrapper.class, ColorWrapper::parse, ColorWrapper::serialize).finish();
 		
 		// serializing helper that turns the String into the actual value, Which requires the struct, a example, parser, serializer.
 		// Note that the parser is expected to catch all crashes and send "exceptions" through the ParseResult instead.
 		// This one doesn't support networking, if networking is used you get also a sender/receiver function.
 		// If a config tries to sync a parsed value without sync support it will CRASH. (Intentionally)
 		// The Example is mainly used for the config comment that will display it, which is especially useful for arrays where no default could be a thing.
-		IConfigSerializer<TestValue> serializer = IConfigSerializer.noSync(type, new TestValue(), TestValue::parse, TestValue::serialize);
+		IConfigSerializer<TestValue> serializer = IConfigSerializer.noSync(builder.build(), new TestValue(), TestValue::parse, TestValue::serialize);
 		value = section.addParsed("testExample", new TestValue(), serializer);
 		handler = CarbonConfig.createConfig("carbonconfig", config);
 		handler.register();
@@ -60,23 +63,28 @@ public class ParsedValueConfigExample
 		/*
 		 * Parse Function that parses the DataType.
 		 */
-		public static ParseResult<TestValue> parse(String[] value) {
-			if(value.length != 4) return ParseResult.error(Helpers.mergeCompound(value), "4 Elements are required");
-			if(value[0] == null || value[0].trim().isEmpty()) return ParseResult.error(value[0], "Value [Name] is not allowed to be null/empty");
-			ParseResult<Integer> year = Helpers.parseInt(value[1]);
-			if(year.hasError()) return year.onlyError("Couldn't parse [Year] argument");
-			ParseResult<Double> fluffyness = Helpers.parseDouble(value[2]);
-			if(fluffyness.hasError()) return fluffyness.onlyError("Couldn't parse [Fluffyness] argument");
-			ParseResult<Integer> color = ColorWrapper.parseInt(value[3]);
-			if(color.hasError()) return color.onlyError("Couldn't parse [Colour] argument");
-			return ParseResult.success(new TestValue(value[0], year.getValue(), fluffyness.getValue(), color.getValue()));
+		public static ParseResult<TestValue> parse(ParsedMap map) {
+			ParseResult<String> name = map.getOrError("Name", String.class);
+			if(name.hasError()) return name.onlyError();
+			ParseResult<Integer> year = map.getOrError("Year", Integer.class);
+			if(year.hasError()) return year.onlyError();
+			ParseResult<Double> fluffyness = map.getOrError("Fluffyness", Double.class);
+			if(fluffyness.hasError()) return fluffyness.onlyError();
+			ParseResult<ColorWrapper> color = map.getOrError("Favorite Color", ColorWrapper.class);
+			if(color.hasError()) return color.onlyError();
+			return ParseResult.success(new TestValue(name.getValue(), year.getValue(), fluffyness.getValue(), color.map(ColorWrapper::getColor)));
 		}
 		
 		/*
 		 * Serialization function that turns the DataType into a string. 
 		 */
-		public String[] serialize() {
-			return new String[] {name, Integer.toString(year), Double.toString(fluffyness), ColorWrapper.serialize(favoriteColour)};
+		public ParsedMap serialize() {
+			ParsedMap map = new ParsedMap();
+			map.put("Name", name);
+			map.put("Year", year);
+			map.put("Fluffyness", fluffyness);
+			map.put("Color", new ColorWrapper(favoriteColour));
+			return map;
 		}
 	}
 }

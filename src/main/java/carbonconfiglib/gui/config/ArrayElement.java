@@ -1,7 +1,7 @@
 package carbonconfiglib.gui.config;
 
 import carbonconfiglib.gui.api.IArrayNode;
-import carbonconfiglib.gui.api.IConfigNode;
+import carbonconfiglib.gui.api.ICompoundNode;
 import carbonconfiglib.gui.api.IValueNode;
 import carbonconfiglib.gui.screen.ArrayScreen;
 import carbonconfiglib.gui.widgets.CarbonButton;
@@ -26,12 +26,22 @@ import net.minecraft.network.chat.Component;
  */
 public class ArrayElement extends ConfigElement
 {
-	Button textBox = addChild(new CarbonButton(0, 0, 72, 18, Component.translatable("gui.carbonconfig.edit"), this::onPress));
-	IArrayNode array;
+	Button textBox = addChild(new CarbonButton(0, 0, isArray() ? 190 : isCompound() ? 105 : 72, 18, Component.translatable("gui.carbonconfig.edit"), this::onPress), isArray() ? GuiAlign.CENTER : GuiAlign.RIGHT, 0);
+	IArrayNode node;
 	
-	public ArrayElement(IConfigNode node) {
-		super(node);
-		array = node.asArray();
+	public ArrayElement(IArrayNode node) {
+		super(node.getName());
+		this.node = node;
+	}
+	
+	public ArrayElement(IArrayNode owner, IArrayNode node) {
+		super(owner, node.getName());
+		this.node = node;
+	}
+	
+	public ArrayElement(ICompoundNode owner, IArrayNode node) {
+		super(owner, node.getName());
+		this.node = node;
 	}
 	
 	private void onPress(Button button) {
@@ -44,29 +54,34 @@ public class ArrayElement extends ConfigElement
 	}
 	
 	@Override
+	protected int indexOf() {
+		return array.indexOf(node);
+	}
+	
+	@Override
 	protected boolean isReset() {
-		return array.isChanged();
+		return node.isChanged();
 	}
 	
 	@Override
 	public boolean isChanged() {
-		return array.isChanged();
+		return node.isChanged();
 	}
 	
 	@Override
 	public boolean isDefault() {
-		return array.isDefault();
+		return node.isDefault();
 	}
 	
 	@Override
 	protected void onDefault(CarbonIconButton button) {
-		array.setDefault();
+		node.setDefault();
 		updateValues();
 	}
 	
 	@Override
 	protected void onReset(CarbonIconButton button) {
-		array.setPrevious();
+		node.setPrevious();
 		updateValues();
 	}
 }

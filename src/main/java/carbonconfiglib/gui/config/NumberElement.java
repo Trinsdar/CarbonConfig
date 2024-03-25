@@ -3,7 +3,7 @@ package carbonconfiglib.gui.config;
 import com.mojang.blaze3d.vertex.PoseStack;
 
 import carbonconfiglib.gui.api.IArrayNode;
-import carbonconfiglib.gui.api.IConfigNode;
+import carbonconfiglib.gui.api.ICompoundNode;
 import carbonconfiglib.gui.api.IValueNode;
 import carbonconfiglib.gui.widgets.CarbonEditBox;
 import carbonconfiglib.utils.ParseResult;
@@ -30,18 +30,22 @@ public class NumberElement extends ConfigElement
 	CarbonEditBox textBox;
 	ParseResult<Boolean> result;
 	
-	public NumberElement(IConfigNode node, IValueNode value) {
-		super(node, value);
+	public NumberElement(IValueNode value) {
+		super(value);
 	}
 	
-	public NumberElement(IConfigNode node, IArrayNode array, int index) {
-		super(node, array, index);
+	public NumberElement(IArrayNode array, IValueNode value) {
+		super(array, value);
 	}
 	
+	public NumberElement(ICompoundNode compound, IValueNode value) {
+		super(compound, value);
+	}
+		
 	@Override
 	public void init() {
 		super.init();
-		textBox = addChild(new CarbonEditBox(font, 0, 0, isArray() ? 150 : 70, 18), isArray() ? GuiAlign.CENTER : GuiAlign.RIGHT, 1);
+		textBox = addChild(new CarbonEditBox(font, 0, 0, isArray() ? 150 : (isCompound() ? 103 : 70), 18), isArray() ? GuiAlign.CENTER : GuiAlign.RIGHT, 1);
 		textBox.setValue(value.get());
 		textBox.setResponder(T -> {
 			textBox.setTextColor(0xE0E0E0);

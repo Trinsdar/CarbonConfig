@@ -5,7 +5,6 @@ import com.mojang.serialization.Dynamic;
 import carbonconfiglib.CarbonConfig;
 import carbonconfiglib.impl.internal.EventHandler;
 import carbonconfiglib.networking.ICarbonPacket;
-import net.minecraft.client.server.IntegratedServer;
 import net.minecraft.nbt.NbtOps;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.MinecraftServer;
@@ -48,17 +47,12 @@ public class SaveGameRulesPacket implements ICarbonPacket
 	
 	@Override
 	public void process(Player player) {
-		if(!canIgnorePermissionCheck() && !player.hasPermissions(4)) {
+		if(!CarbonConfig.hasPermission(player, 4)) {
 			CarbonConfig.LOGGER.warn("Don't have Permission to Change configs");
 			return;
 		}
 		MinecraftServer server = EventHandler.getServer();
 		if(server == null) return;
 		server.getGameRules().assignFrom(rules, server);
-	}
-	
-	private boolean canIgnorePermissionCheck() {
-		MinecraftServer server = EventHandler.getServer();
-		return !server.isDedicatedServer() && (server instanceof IntegratedServer ? ((IntegratedServer)server).isPublished() : false);
 	}
 }

@@ -1,5 +1,8 @@
 package carbonconfiglib.gui.api;
 
+import java.util.List;
+
+import carbonconfiglib.api.ISuggestionProvider.Suggestion;
 import carbonconfiglib.utils.ParseResult;
 
 /**
@@ -23,4 +26,8 @@ public interface IValueNode extends INode
 	public void set(String value);
 	
 	public ParseResult<Boolean> isValid(String value);
+	
+	public DataType getDataType();
+	public boolean isForcingSuggestions();
+	public List<Suggestion> getSuggestions();
 }
