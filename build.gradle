@@ -5,7 +5,7 @@ plugins {
     id 'com.modrinth.minotaur' version '2.+'
 }
 
-version = MC_VERSION + '-' + MOD_VERSION
+version = MC_VERSION_FULL + '-' + MOD_VERSION
 group = project.maven_group
 
 
@@ -111,8 +111,8 @@ modrinth {
 	versionNumber = MOD_VERSION
 	versionType = RELEASE_TYPE
 	uploadFile = jar
-	gameVersions = [MC_VERSION_RAW]
-	loaders = ['forge']
+	gameVersions = [MC_VERSION]
+	loaders = ['fabric']
 	
     def changelog = new File(projectDir, "/changelogs/"+MOD_VERSION.replace(".", "")+".md");
     changelog = changelog.exists() ? changelog.getText('UTF-8') : "";
@@ -131,6 +131,6 @@ task curseforge(type: net.darkhax.curseforgegradle.TaskPublishCurseForge) {
     def changelog = new File(projectDir, "/changelogs/"+MOD_VERSION.replace(".", "")+".md");
     mainFile.changelog = changelog.exists() ? changelog.getText('UTF-8') : "";
     mainFile.changelogType = 'markdown'
-    mainFile.addGameVersion(MC_VERSION_RAW, 'Server', 'Client')
+    mainFile.addGameVersion(MC_VERSION, 'Server', 'Client')
     mainFile.addJavaVersion('Java 17')
 }
