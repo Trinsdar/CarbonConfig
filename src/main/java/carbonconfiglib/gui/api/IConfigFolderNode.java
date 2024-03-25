@@ -1,8 +1,6 @@
 package carbonconfiglib.gui.api;
 
-import java.util.List;
-
-import carbonconfiglib.api.ISuggestionProvider.Suggestion;
+import carbonconfiglib.utils.structure.IStructuredData.StructureType;
 import net.minecraft.network.chat.Component;
 
 /**
@@ -23,19 +21,9 @@ import net.minecraft.network.chat.Component;
 public interface IConfigFolderNode extends IConfigNode
 {
 	@Override
-	public default List<Suggestion> getValidValues() { return null; }
+	default INode asNode() { return null; }
 	@Override
-	public default boolean isForcingSuggestions() { return false; }
-	@Override
-	public default IValueNode asValue() { return null; }
-	@Override
-	public default IArrayNode asArray() { return null; }
-	@Override
-	public default ICompoundNode asCompound() { return null; }
-	@Override
-	public default boolean isArray() { return false; }
-	@Override
-	public default List<DataType> getDataType() { return null; }
+	default StructureType getDataStructure() { return null; }
 	@Override
 	public default boolean isLeaf() { return false; }
 	@Override

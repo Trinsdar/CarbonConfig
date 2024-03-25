@@ -1,10 +1,8 @@
 package carbonconfiglib.impl.entries;
 
 import java.util.Collection;
-import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Set;
-import java.util.StringJoiner;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
@@ -12,13 +10,13 @@ import carbonconfiglib.api.ISuggestionProvider;
 import carbonconfiglib.api.buffer.IReadBuffer;
 import carbonconfiglib.api.buffer.IWriteBuffer;
 import carbonconfiglib.config.ConfigEntry.CollectionConfigEntry;
-import carbonconfiglib.config.ConfigEntry.IArrayConfig;
 import carbonconfiglib.config.ConfigSection;
 import carbonconfiglib.utils.Helpers;
-import carbonconfiglib.utils.IEntryDataType;
-import carbonconfiglib.utils.IEntryDataType.SimpleDataType;
 import carbonconfiglib.utils.MultilinePolicy;
 import carbonconfiglib.utils.ParseResult;
+import carbonconfiglib.utils.structure.IStructuredData;
+import carbonconfiglib.utils.structure.IStructuredData.EntryDataType;
+import carbonconfiglib.utils.structure.StructureList.ListBuilder;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectLinkedOpenHashSet;
 import it.unimi.dsi.fastutil.objects.ObjectSets;
@@ -40,7 +38,7 @@ import net.minecraft.resources.ResourceLocation;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-public class RegistryKeyValue extends CollectionConfigEntry<ResourceLocation, Set<ResourceLocation>> implements IArrayConfig
+public class RegistryKeyValue extends CollectionConfigEntry<ResourceLocation, Set<ResourceLocation>>
 {
 	Registry<?> registry;
 	Class<?> clz;
@@ -96,47 +94,16 @@ public class RegistryKeyValue extends CollectionConfigEntry<ResourceLocation, Se
 		return ParseResult.success(true);
 	}
 	
-	@Override
-	public List<String> getEntries() {
-		List<String> result = new ObjectArrayList<>();
-		for(ResourceLocation entry : getValue()) {
-			result.add(entry.toString());
-		}
-		return result;
+	private ParseResult<ResourceLocation> parseEntry(String value) {
+		ResourceLocation location = ResourceLocation.tryParse(value);
+		if(location == null) return ParseResult.error(value, "Id ["+value+"] isn't a valid resource location");
+		if(!registry.containsKey(location) || (filter != null && !filter.test(location))) return ParseResult.error(value, "Id ["+value+"] isn't valid");
+		return ParseResult.success(location);
 	}
 	
 	@Override
-	public List<String> getDefaults() {
-		List<String> result = new ObjectArrayList<>();
-		for(ResourceLocation entry : getDefault()) {
-			result.add(entry.toString());
-		}
-		return result;
-	}
-	
-	@Override
-	public ParseResult<Boolean> canSetArray(List<String> entries) {
-		if(entries == null) return ParseResult.partial(false, NullPointerException::new, "Value isn't allowed to be null");
-		for(int i = 0,m=entries.size();i<m;i++) {
-			ResourceLocation result = ResourceLocation.tryParse(entries.get(i));
-			if(result == null || !registry.containsKey(result)) return ParseResult.partial(false, NoSuchElementException::new, "Value ["+entries.get(i)+"] doesn't exist in the registry");
-			if(filter != null && !filter.test(result)) return ParseResult.partial(false, IllegalArgumentException::new, "Value ["+entries.get(i)+"] isn't allowed");
-		}
-		return ParseResult.success(true);
-	}
-	
-	@Override
-	public void setArray(List<String> entries) {
-		StringJoiner joiner = new StringJoiner(",");
-		for(String s : entries) {
-			joiner.add(s);
-		}
-		deserializeValue(joiner.toString());
-	}
-	
-	@Override
-	public IEntryDataType getDataType() {
-		return SimpleDataType.ofVariant(clz);
+	public IStructuredData getDataType() {
+		return ListBuilder.variants(EntryDataType.STRING, ResourceLocation.class, this::parseEntry, ResourceLocation::toString).build(true);
 	}
 	
 	@Override

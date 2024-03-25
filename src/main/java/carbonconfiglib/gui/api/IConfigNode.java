@@ -2,7 +2,7 @@ package carbonconfiglib.gui.api;
 
 import java.util.List;
 
-import carbonconfiglib.api.ISuggestionProvider.Suggestion;
+import carbonconfiglib.utils.structure.IStructuredData.StructureType;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 
@@ -24,14 +24,9 @@ import net.minecraft.network.chat.MutableComponent;
 public interface IConfigNode
 {
 	public List<IConfigNode> getChildren();
-	public IValueNode asValue();
-	public IArrayNode asArray();
-	public ICompoundNode asCompound();
-	public List<DataType> getDataType();
-	public List<Suggestion> getValidValues();
-	public boolean isForcingSuggestions();
+	public INode asNode();
+	public StructureType getDataStructure();
 	
-	public boolean isArray();
 	public boolean isLeaf();
 	public boolean isRoot();
 	

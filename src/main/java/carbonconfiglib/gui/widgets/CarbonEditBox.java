@@ -31,6 +31,7 @@ public class CarbonEditBox extends EditBox implements IOwnable
 	
 	public CarbonEditBox(Font font, int x, int y, int width, int height) {
 		super(font, x, y, width, height, Component.empty());
+		setMaxLength(65536);
 	}
 	
 	public CarbonEditBox setInnerDiff(int innerDiff) {

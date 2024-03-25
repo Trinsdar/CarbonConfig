@@ -1,17 +1,22 @@
 package carbonconfiglib.gui.api;
 
+import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 
 import carbonconfiglib.gui.config.BooleanElement;
 import carbonconfiglib.gui.config.ConfigElement;
 import carbonconfiglib.gui.config.EnumElement;
 import carbonconfiglib.gui.config.NumberElement;
 import carbonconfiglib.gui.config.StringElement;
-import carbonconfiglib.utils.IEntryDataType.EntryDataType;
-import carbonconfiglib.utils.IEntryDataType.SimpleDataType;
+import carbonconfiglib.utils.structure.IStructuredData;
+import carbonconfiglib.utils.structure.IStructuredData.EntryDataType;
+import carbonconfiglib.utils.structure.IStructuredData.SimpleData;
 import it.unimi.dsi.fastutil.objects.Object2ObjectMaps;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
+import speiger.src.collections.objects.utils.ObjectIterables;
+import speiger.src.collections.objects.utils.ObjectLists;
 
 /**
  * Copyright 2023 Speiger, Meduris
@@ -30,37 +35,39 @@ import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
  */
 public class DataType
 {
-	public static final DataType BOOLEAN = new DataType(false, "false", BooleanElement::new, BooleanElement::new);
-	public static final DataType INTEGER = new DataType(false, "0", NumberElement::new, NumberElement::new);
-	public static final DataType DOUBLE = new DataType(false, "0.0", NumberElement::new, NumberElement::new);
-	public static final DataType STRING = new DataType(true, " ", StringElement::new, StringElement::new);
-	public static final DataType ENUM = new DataType(true, " ", EnumElement::new, EnumElement::new);
+	public static final DataType BOOLEAN = new DataType(false, "false", BooleanElement::new, BooleanElement::new, BooleanElement::new);
+	public static final DataType INTEGER = new DataType(false, "0", NumberElement::new, NumberElement::new, NumberElement::new);
+	public static final DataType DOUBLE = new DataType(false, "0.0", NumberElement::new, NumberElement::new, NumberElement::new);
+	public static final DataType STRING = new DataType(true, " ", StringElement::new, StringElement::new, StringElement::new);
+	public static final DataType ENUM = new DataType(true, " ", EnumElement::new, EnumElement::new, EnumElement::new);
 	private static final Map<Class<?>, DataType> AUTO_DATA_TYPES = Object2ObjectMaps.synchronize(new Object2ObjectOpenHashMap<>());
 	
 	boolean allowsEmptyValue;
 	String defaultValue;
-	BiFunction<IConfigNode, IValueNode, ConfigElement> creator;
-	IArrayFunction arrayCreator;
+	Function<IValueNode, ConfigElement> creator;
+	BiFunction<IArrayNode, IValueNode, ConfigElement> arrayCreator;
+	BiFunction<ICompoundNode, IValueNode, ConfigElement> compoundCreator;
 	
-	public DataType(boolean allowsEmptyValue, String defaultValue, BiFunction<IConfigNode, IValueNode, ConfigElement> creator, IArrayFunction arrayCreator) {
+	public DataType(boolean allowsEmptyValue, String defaultValue, Function<IValueNode, ConfigElement> creator, BiFunction<IArrayNode, IValueNode, ConfigElement> arrayCreator, BiFunction<ICompoundNode, IValueNode, ConfigElement> compoundCreator) {
 		this.allowsEmptyValue = allowsEmptyValue;
 		this.defaultValue = defaultValue;
 		this.creator = creator;
 		this.arrayCreator = arrayCreator;
+		this.compoundCreator = compoundCreator;
 	}
 	
-	public ConfigElement create(IConfigNode node) {
-		return creator.apply(node, node.asValue());
+	public ConfigElement create(IValueNode node) {
+		return creator.apply(node);
 	}
 	
-	public ConfigElement create(IConfigNode node, IValueNode value) {
-		return creator.apply(node, value);
+	public ConfigElement create(IArrayNode array, IValueNode node) {
+		return arrayCreator.apply(array, node);
 	}
 	
-	public ConfigElement create(IConfigNode node, IArrayNode array, int index) {
-		return arrayCreator.create(node, array, index);
+	public ConfigElement create(ICompoundNode compound, IValueNode node) {
+		return compoundCreator.apply(compound, node);
 	}
-	
+		
 	public String getDefaultValue() {
 		return defaultValue;
 	}
@@ -69,8 +76,17 @@ public class DataType
 		return allowsEmptyValue;
 	}
 	
-	public static DataType bySimple(SimpleDataType type) {
-		return byConfig(type.getType(), type.getVariant());
+	public static List<DataType> resolve(IStructuredData data) {
+		switch(data.getDataType()) {
+			case COMPOUND: return ObjectIterables.flatMap(data.asCompound().getFormat().values(), DataType::resolve).pourAsList();
+			case LIST: return resolve(data.asList().getType());
+			case SIMPLE: return ObjectLists.singleton(bySimple(data.asSimple()));
+			default: return ObjectLists.empty();
+		}
+	}
+	
+	public static DataType bySimple(SimpleData type) {
+		return byConfig(type.isVariant() ? EntryDataType.CUSTOM : type.getType(), type.getVariant());
 	}
 	
 	public static DataType byConfig(EntryDataType type, Class<?> variant) {

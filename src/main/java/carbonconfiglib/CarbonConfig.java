@@ -41,6 +41,7 @@ import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.world.entity.player.Player;
 
 /**
  * Copyright 2023 Speiger, Meduris
@@ -208,7 +209,7 @@ public class CarbonConfig implements ModInitializer
 			CarbonConfig.LOGGER.info("Tried to open a Remote config when there was no remote attached");
 			return;
 		}
-		else if(!mc.player.hasPermissions(4)) {
+		else if(!mc.hasSingleplayerServer() && !mc.player.hasPermissions(4)) {
 			CarbonConfig.LOGGER.info("Tried to open a Remote config without permission");			
 			return;
 		}
@@ -245,6 +246,12 @@ public class CarbonConfig implements ModInitializer
 		}
 		Minecraft mc = Minecraft.getInstance();
 		mc.setScreen(new ConfigScreen(Navigator.create(config).withWalker(path), config, mc.screen, texture.asHolder()));
+	}
+	
+	public static boolean hasPermission(Player player, int permissionLevel) {
+		MinecraftServer server = EventHandler.getServer();
+		if(server.isSingleplayer() && server.isSingleplayerOwner(player.getGameProfile())) return true;
+		return player.hasPermissions(permissionLevel);
 	}
 	
 	public void onCommonLoad() {

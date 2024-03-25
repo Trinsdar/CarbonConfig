@@ -4,106 +4,85 @@ import java.util.List;
 
 import org.apache.logging.log4j.util.Strings;
 
-import carbonconfiglib.api.ISuggestionProvider.Suggestion;
+import carbonconfiglib.api.IReloadMode;
 import carbonconfiglib.config.ConfigEntry;
-import carbonconfiglib.config.ConfigEntry.IArrayConfig;
+import carbonconfiglib.config.ConfigEntry.ParsedArray;
 import carbonconfiglib.gui.api.DataType;
-import carbonconfiglib.gui.api.IArrayNode;
-import carbonconfiglib.gui.api.ICompoundNode;
 import carbonconfiglib.gui.api.IConfigNode;
-import carbonconfiglib.gui.api.IValueNode;
+import carbonconfiglib.gui.api.INode;
 import carbonconfiglib.impl.ReloadMode;
-import it.unimi.dsi.fastutil.objects.ObjectLists;
+import carbonconfiglib.utils.Helpers;
+import carbonconfiglib.utils.structure.IStructuredData;
+import carbonconfiglib.utils.structure.IStructuredData.StructureType;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 
-/**
- * Copyright 2023 Speiger, Meduris
- * 
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- * 
- * https://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 public class ConfigLeaf implements IConfigNode
 {
 	ConfigEntry<?> entry;
-	ValueNode value;
-	ArrayNode arrayValue;
+	IStructuredData data;
+	StructureType type;
+	IReloadMode mode;
+	IValueActions value;
 	
 	public ConfigLeaf(ConfigEntry<?> entry) {
 		this.entry = entry;
+		this.data = entry.getDataType();
+		this.type = data.getDataType();
+		this.mode = entry.getReloadState();
+	}
+	
+	@Override
+	public INode asNode() {
+		if(value == null) {
+			switch(type) {
+				case COMPOUND:
+					value = new CarbonCompound(mode, data.asCompound(), getName(), getTooltip(), entry.serialize(), entry.serializeDefault(), entry::canSetValue, () -> entry.getSuggestions(T -> true), this::save);
+					break;
+				case LIST:
+					value = new CarbonArray(mode, data.asList(), getName(), getTooltip(), entry.serialize(), entry.serializeDefault(), entry::canSetValue, () -> entry.getSuggestions(T -> true), this::save);
+					break;
+				case SIMPLE:
+					value = new CarbonValue(mode, getName(), getTooltip(), DataType.bySimple(entry.getDataType().asSimple()), entry.areSuggestionsForced(), () -> entry.getSuggestions(T -> true), entry.serialize(), entry.serializeDefault(), entry::canSetValue, this::save);
+					break;
+			}
+		}
+		return value;
+	}
+	
+	private void save(String value) {
+		if(entry instanceof ParsedArray) {
+			entry.deserializeValue(Helpers.removeLayer(value, 0));
+			return;
+		}
+		entry.deserializeValue(value);
 	}
 	
 	@Override
 	public List<IConfigNode> getChildren() { return null; }
-	
-	@Override
-	public IValueNode asValue() {
-		if(isArray()) return null;
-		if(value == null) value = new ValueNode(entry);
-		return value;
-	}
-	@Override
-	public IArrayNode asArray() {
-		if(!isArray()) return null;
-		if(arrayValue == null) arrayValue = new ArrayNode(entry, (IArrayConfig)entry, DataType.bySimple(entry.getDataType().asDataType()));
-		return arrayValue;
-	}
-	
-	@Override
-	public ICompoundNode asCompound() { return null; }
-	@Override
-	public List<DataType> getDataType() { return ObjectLists.singleton(DataType.bySimple(entry.getDataType().asDataType())); }
-	@Override
-	public List<Suggestion> getValidValues() { return entry.getSuggestions(T -> true); }
-	@Override
-	public boolean isForcingSuggestions() { return entry.areSuggestionsForced(); }
 	@Override
 	public boolean isLeaf() { return true; }
 	@Override
-	public boolean isArray() { return entry instanceof IArrayConfig; }
-	@Override
 	public boolean isRoot() { return false; }
 	@Override
-	public boolean isChanged() { return (value != null && value.isChanged()) || (arrayValue != null && arrayValue.isChanged()); }
-	
-	@Override
-	public void save() {
-		if(value != null) value.save();
-		if(arrayValue != null) arrayValue.save();
-	}
-	
+	public boolean isChanged() { return value != null && value.isChanged(); }
 	@Override
 	public void setPrevious() {
 		if(value != null) value.setPrevious();
-		if(arrayValue != null) arrayValue.setPrevious();
 	}
-	
 	@Override
 	public void setDefault() {
-		if(isArray()) {
-			if(arrayValue == null) asArray();
-			arrayValue.setDefault();
-		}
-		else {
-			if(value == null) asValue();
-			value.setDefault();
-		}
+		if(value != null) value.setDefault();		
 	}
-	
 	@Override
-	public boolean requiresRestart() { return entry.getReloadState() == ReloadMode.GAME; }
+	public void save() {
+		if(value != null) value.save();
+	}
 	@Override
-	public boolean requiresReload() { return entry.getReloadState() == ReloadMode.WORLD; }
+	public boolean requiresRestart() { return mode == ReloadMode.GAME; }
+	@Override
+	public boolean requiresReload() { return mode == ReloadMode.WORLD; }
 	@Override
 	public String getNodeName() { return null; }
 	@Override
@@ -120,4 +99,6 @@ public class ConfigLeaf implements IConfigNode
 		if(!Strings.isBlank(limit)) comp.append("\n").append(Component.literal(limit).withStyle(ChatFormatting.BLUE));
 		return comp;
 	}
+	@Override
+	public StructureType getDataStructure() { return type; }
 }

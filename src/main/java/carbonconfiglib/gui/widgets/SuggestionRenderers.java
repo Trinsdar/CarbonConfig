@@ -118,8 +118,8 @@ public class SuggestionRenderers
 		@Override
 		public Component renderSuggestion(GuiGraphics stack, String value, int x, int y) {
 			try {
-				stack.fill(x+1, y+1, x+18, y+19, 0xFFA0A0A0);
-				stack.fill(x+2, y+2, x+17, y+18, Integer.decode(value) | 0xFF000000);
+				GuiComponent.fill(stack, x+1, y-1, x+18, y+17, 0xFFA0A0A0);
+				GuiComponent.fill(stack, x+2, y, x+17, y+16, Long.decode(value).intValue() | 0xFF000000);
 			}
 			catch(Exception e) {
 			}

@@ -29,17 +29,23 @@ import net.minecraft.network.chat.Component;
 public class FolderElement extends ConfigElement
 {
 	Button button = addChild(new CarbonButton(0, 0, 0, 18, Component.empty(), this::onPress));
+	IConfigNode config;
 	Navigator nav;
 	
 	public FolderElement(IConfigNode node, Navigator prev)
 	{
-		super(node);
+		super(node.getName());
+		this.config = node;
 		button.setMessage(node.getName());
 		nav = prev.add(node.getName(), node.getNodeName());
 	}
 	
 	public void onPress(Button button) {
-		mc.setScreen(new ConfigScreen(nav, node, mc.screen, owner.getCustomTexture()));
+		mc.setScreen(new ConfigScreen(nav, config, mc.screen, owner.getCustomTexture()));
+	}
+	
+	public IConfigNode getNode() {
+		return config;
 	}
 	
 	@Override

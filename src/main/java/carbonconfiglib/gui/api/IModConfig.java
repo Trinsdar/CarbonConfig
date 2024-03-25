@@ -40,8 +40,10 @@ public interface IModConfig
 	public ConfigType getConfigType();
 	public IConfigNode getRootNode();
 	public boolean isDefault();
+	public boolean canCreateConfigs();
 	public void restoreDefault();
 	public List<IConfigTarget> getPotentialFiles();
+	public boolean createConfig(Path path);
 	public IModConfig loadFromFile(Path path);
 	public IModConfig loadFromNetworking(UUID requestId, Consumer<Predicate<FriendlyByteBuf>> network);
 	public void save();

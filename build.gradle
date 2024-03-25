@@ -1,9 +1,11 @@
 plugins {
 	id 'fabric-loom' version '1.2-SNAPSHOT'
 	id 'maven-publish'
+	id 'net.darkhax.curseforgegradle' version '1.1.15'
+    id 'com.modrinth.minotaur' version '2.+'
 }
 
-version = project.mod_version
+version = MC_VERSION_FULL + '-' + MOD_VERSION
 group = project.maven_group
 
 
@@ -99,4 +101,36 @@ publishing {
 		// The repositories here will be used for publishing your artifact, not for
 		// retrieving dependencies.
 	}
+}
+
+
+modrinth {
+	token = System.getenv("Modrinth_API_Token");
+	projectId = 'carbon-config'
+	versionName = archivesBaseName.replace(" ", "")+"-"+version
+	versionNumber = MOD_VERSION
+	versionType = RELEASE_TYPE
+	uploadFile = jar
+	gameVersions = [MC_VERSION]
+	loaders = ['fabric']
+	
+    def changelog = new File(projectDir, "/changelogs/"+MOD_VERSION.replace(".", "")+".md");
+    changelog = changelog.exists() ? changelog.getText('UTF-8') : "";
+}
+
+task curseforge(type: net.darkhax.curseforgegradle.TaskPublishCurseForge) { 
+	mustRunAfter assemble
+	group 'publishing'
+	description 'Publishes the mod to Curseforge'
+	apiToken = System.getenv("Curseforge_API_Token")
+		
+	def mainFile = upload(898104, jar)
+    mainFile.releaseType = RELEASE_TYPE
+    mainFile.displayName = archivesBaseName.replace(" ", "")+"-"+version
+    
+    def changelog = new File(projectDir, "/changelogs/"+MOD_VERSION.replace(".", "")+".md");
+    mainFile.changelog = changelog.exists() ? changelog.getText('UTF-8') : "";
+    mainFile.changelogType = 'markdown'
+    mainFile.addGameVersion(MC_VERSION, 'Server', 'Client')
+    mainFile.addJavaVersion('Java 17')
 }

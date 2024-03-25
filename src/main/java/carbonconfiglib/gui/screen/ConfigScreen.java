@@ -12,6 +12,8 @@ import carbonconfiglib.gui.api.BackgroundTexture;
 import carbonconfiglib.gui.api.BackgroundTexture.BackgroundHolder;
 import carbonconfiglib.gui.api.IConfigNode;
 import carbonconfiglib.gui.api.IModConfig;
+import carbonconfiglib.gui.api.INode;
+import carbonconfiglib.gui.api.IValueNode;
 import carbonconfiglib.gui.config.ArrayElement;
 import carbonconfiglib.gui.config.CompoundElement;
 import carbonconfiglib.gui.config.ConfigElement.GuiAlign;
@@ -339,20 +341,24 @@ public class ConfigScreen extends ListScreen
 	protected void collectElements(Consumer<Element> elements) {
 		for(IConfigNode child : node.getChildren()) {
 			if(child.isLeaf()) {
-				if(child.isArray()) {
-					elements.accept(new ArrayElement(child));
-					continue;
+				switch(child.getDataStructure()) {
+					case COMPOUND:
+						elements.accept(new CompoundElement(INode.asCompound(child)));
+						break;
+					case LIST:
+						elements.accept(new ArrayElement(INode.asArray(child)));
+						break;
+					case SIMPLE:
+						IValueNode node = INode.asValue(child);
+						if(node == null) break;
+						if(node.isForcingSuggestions()) {
+							elements.accept(new SelectionElement(node));
+							break;
+						}
+						Element element = node.getDataType().create(node);
+						if(element != null) elements.accept(element);
+						break;
 				}
-				if(child.getDataType().size() > 1) {
-					elements.accept(new CompoundElement(child));
-					continue;
-				}
-				if(child.isForcingSuggestions()) {
-					elements.accept(new SelectionElement(child));
-					continue;
-				}
-				Element element = child.getDataType().get(0).create(child);
-				if(element != null) elements.accept(element);
 			}
 			else elements.accept(new FolderElement(child, nav));
 		}
@@ -368,20 +374,24 @@ public class ConfigScreen extends ListScreen
 				node.getChildren().forEach(nodes::enqueue);
 				continue;
 			}
-			if(node.isArray()) {
-				results.add(new ArrayElement(node));
-				continue;
+			switch(node.getDataStructure()) {
+				case COMPOUND:
+					results.add(new CompoundElement(INode.asCompound(node)));
+					break;
+				case LIST:
+					results.add(new ArrayElement(INode.asArray(node)));
+					break;
+				case SIMPLE:
+					IValueNode value = INode.asValue(node);
+					if(value == null) break;
+					if(value.isForcingSuggestions()) {
+						results.add(new SelectionElement(value));
+						break;
+					}
+					Element element = value.getDataType().create(value);
+					if(element != null) results.add(element);
+					break;
 			}
-			if(node.getDataType().size() > 1) {
-				results.add(new CompoundElement(node));
-				continue;
-			}
-			if(node.getValidValues().size() > 0) {
-				results.add(new SelectionElement(node));
-				continue;
-			}
-			Element element = node.getDataType().get(0).create(node);
-			if(element != null) results.add(element);
 		}
 		
 		return results;

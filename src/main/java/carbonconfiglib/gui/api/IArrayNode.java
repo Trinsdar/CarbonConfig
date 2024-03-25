@@ -1,5 +1,10 @@
 package carbonconfiglib.gui.api;
 
+import java.util.List;
+
+import carbonconfiglib.api.ISuggestionProvider.Suggestion;
+import carbonconfiglib.utils.structure.IStructuredData.StructureType;
+
 /**
  * Copyright 2023 Speiger, Meduris
  * 
@@ -19,16 +24,9 @@ public interface IArrayNode extends INode
 {
 	public int size();
 	public INode get(int index);
+	public StructureType getInnerType();
 	
-	public default IValueNode asValue(int index) {
-		INode node = get(index);
-		return node instanceof IValueNode ? (IValueNode)node : null;
-	}
-	
-	public default ICompoundNode asCompound(int index) {
-		INode node = get(index);
-		return node instanceof ICompoundNode ? (ICompoundNode)node : null;
-	}
+	public List<Suggestion> getSuggestions();
 	
 	public void createNode();
 	public void removeNode(int index);

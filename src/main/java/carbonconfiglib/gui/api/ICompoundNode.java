@@ -2,10 +2,6 @@ package carbonconfiglib.gui.api;
 
 import java.util.List;
 
-import carbonconfiglib.api.ISuggestionProvider.Suggestion;
-import carbonconfiglib.utils.ParseResult;
-import net.minecraft.network.chat.Component;
-
 /**
  * Copyright 2023 Speiger, Meduris
  * 
@@ -23,12 +19,8 @@ import net.minecraft.network.chat.Component;
  */
 public interface ICompoundNode extends INode
 {
-	public List<IValueNode> getValues();
-	public Component getName(int index);
+	public List<? extends INode> getValues();
 	public boolean isValid();
 	public String get();
-	public ParseResult<Boolean> isValid(String value);
 	public void set(String value);
-	public boolean isForcedSuggestion(int index);
-	public List<Suggestion> getValidValues(int index);
 }

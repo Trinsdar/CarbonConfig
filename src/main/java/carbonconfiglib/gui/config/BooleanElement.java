@@ -1,7 +1,7 @@
 package carbonconfiglib.gui.config;
 
 import carbonconfiglib.gui.api.IArrayNode;
-import carbonconfiglib.gui.api.IConfigNode;
+import carbonconfiglib.gui.api.ICompoundNode;
 import carbonconfiglib.gui.api.IValueNode;
 import carbonconfiglib.gui.widgets.CarbonButton;
 import net.minecraft.client.gui.components.Button;
@@ -27,20 +27,24 @@ public class BooleanElement extends ConfigElement
 	private Button trueButton;
 	private Button falseButton;
 	
-	public BooleanElement(IConfigNode node, IValueNode value) {
-		super(node, value);
+	public BooleanElement(IValueNode value) {
+		super(value);
 	}
 	
-	public BooleanElement(IConfigNode node, IArrayNode array, int index) {
-		super(node, array, index);
+	public BooleanElement(IArrayNode array, IValueNode value) {
+		super(array, value);
+	}
+	
+	public BooleanElement(ICompoundNode compound, IValueNode value) {
+		super(compound, value);
 	}
 	
 	@Override
 	public void init() {
 		super.init();
-		int width = isArray() ? 72 : 36;
-		trueButton = addChild(new CarbonButton(0, 0, width, 18, Component.translatable("gui.carbonconfig.boolean.true"), this::onTrue), isArray() ? GuiAlign.CENTER : GuiAlign.RIGHT, isArray() ? width/2 : width);
-		falseButton = addChild(new CarbonButton(0, 0, width, 18, Component.translatable("gui.carbonconfig.boolean.false"), this::onFalse), isArray() ? GuiAlign.CENTER : GuiAlign.RIGHT, isArray() ? -(width/2) : 0);
+		int width = isArray() ? 72 : (isCompound() ? 52 : 36);
+		trueButton = addChild(new CarbonButton(0, 0, width, 18, Component.translatable("gui.carbonconfig.boolean.true"), this::onTrue), isArray() ? GuiAlign.CENTER : GuiAlign.RIGHT, isArray() ? width/2 : width+(isCompound() ? 1 : 0));
+		falseButton = addChild(new CarbonButton(0, 0, width+(isCompound() ? 1 : 0), 18, Component.translatable("gui.carbonconfig.boolean.false"), this::onFalse), isArray() ? GuiAlign.CENTER : GuiAlign.RIGHT, isArray() ? -(width/2) : 0);
 		updateData();
 	}
 	

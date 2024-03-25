@@ -2,12 +2,9 @@ package carbonconfiglib.networking.carbon;
 
 import carbonconfiglib.CarbonConfig;
 import carbonconfiglib.config.ConfigHandler;
-import carbonconfiglib.impl.internal.EventHandler;
 import carbonconfiglib.networking.ICarbonPacket;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
-import net.minecraft.client.server.IntegratedServer;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.entity.player.Player;
 
 /**
@@ -52,7 +49,7 @@ public class SaveConfigPacket implements ICarbonPacket
 	
 	@Override
 	public void process(Player player) {
-		if(!canIgnorePermissionCheck() && !player.hasPermissions(4)) {
+		if(!CarbonConfig.hasPermission(player, 4)) {
 			CarbonConfig.LOGGER.warn("Don't have Permission to Change configs");
 			return;
 		}
@@ -67,10 +64,4 @@ public class SaveConfigPacket implements ICarbonPacket
 			e.printStackTrace();
 		}
 	}
-	
-	private boolean canIgnorePermissionCheck() {
-		MinecraftServer server = EventHandler.getServer();
-		return !server.isDedicatedServer() && (server instanceof IntegratedServer ? ((IntegratedServer)server).isPublished() : false);
-	}
-	
 }

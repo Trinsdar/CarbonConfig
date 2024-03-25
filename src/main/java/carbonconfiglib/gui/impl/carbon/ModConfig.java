@@ -19,6 +19,7 @@ import carbonconfiglib.gui.api.IModConfig;
 import carbonconfiglib.impl.PerWorldProxy.WorldTarget;
 import carbonconfiglib.networking.carbon.ConfigRequestPacket;
 import carbonconfiglib.networking.carbon.SaveConfigPacket;
+import carbonconfiglib.utils.Helpers;
 import carbonconfiglib.utils.MultilinePolicy;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.network.FriendlyByteBuf;
@@ -55,6 +56,21 @@ public class ModConfig implements IModConfig
 		this.config = config;
 		this.path = path;
 	}
+	
+	@Override
+	public boolean canCreateConfigs() { return true; }
+	@Override
+	public boolean createConfig(Path path) {
+		Helpers.ensureFolder(path.getParent());
+		try (BufferedWriter writer = Files.newBufferedWriter(path)) {
+			writer.write(config.serialize(handler.getMultilinePolicy()));
+			return true;
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		return false;
+	}
+	
 	
 	@Override
 	public IModConfig loadFromFile(Path path) {
@@ -108,7 +124,6 @@ public class ModConfig implements IModConfig
 		List<IConfigTarget> result = new ObjectArrayList<>();
 		for(IPotentialTarget target : handler.getProxy().getPotentialConfigs()) {
 			Path file = handler.createConfigFile(target.getFolder());
-			if(Files.notExists(file)) continue;
 			if(target instanceof WorldTarget) result.add(new WorldConfigTarget(((WorldTarget)target), file));
 			else result.add(new SimpleConfigTarget(target, file));
 		}
@@ -137,15 +152,10 @@ public class ModConfig implements IModConfig
 	
 	@Override
 	public void save() {
-		if(config == handler.getConfig()) {
-			handler.save();
-		}
-		else {
-			try (BufferedWriter writer = Files.newBufferedWriter(path)) {
-				writer.write(config.serialize(handler.getMultilinePolicy()));
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
+		try (BufferedWriter writer = Files.newBufferedWriter(path)) {
+			writer.write(config.serialize(handler.getMultilinePolicy()));
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
 	}
 	
@@ -154,7 +164,10 @@ public class ModConfig implements IModConfig
 		public NetworkModConfig(String modId, ConfigHandler handler, Config config) {
 			super(modId, handler, config, null);
 		}
-
+		
+		@Override
+		public boolean canCreateConfigs() { return false; }
+		
 		@Override
 		public boolean test(FriendlyByteBuf t) {
 			List<String> lines = ObjectArrayList.wrap(t.readUtf(262144).split("\n"));

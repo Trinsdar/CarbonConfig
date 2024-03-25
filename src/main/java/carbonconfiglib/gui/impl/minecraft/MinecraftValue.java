@@ -1,10 +1,20 @@
 package carbonconfiglib.gui.impl.minecraft;
 
+import java.util.List;
 import java.util.Objects;
 
+import carbonconfiglib.api.ISuggestionProvider.Suggestion;
+import carbonconfiglib.gui.api.DataType;
+import carbonconfiglib.gui.api.IConfigNode;
 import carbonconfiglib.gui.api.IValueNode;
 import carbonconfiglib.utils.ParseResult;
+import carbonconfiglib.utils.structure.IStructuredData.StructureType;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import net.minecraft.ChatFormatting;
+import net.minecraft.client.resources.language.I18n;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import speiger.src.collections.objects.utils.ObjectLists;
 
 /**
  * Copyright 2023 Speiger, Meduris
@@ -61,4 +71,29 @@ public class MinecraftValue implements IValueNode
 	public void set(String value) { this.current = value; }
 	@Override
 	public ParseResult<Boolean> isValid(String value) { return entry.isValid(value); }
+	@Override
+	public StructureType getNodeType() { return StructureType.SIMPLE; }
+	@Override
+	public boolean requiresRestart() { return false; }
+	@Override
+	public boolean requiresReload() { return false; }
+	@Override
+	public Component getName() { return IConfigNode.createLabel(I18n.get(entry.getDescriptionId())); }
+	@Override
+	public Component getTooltip() {
+		String id = entry.getDescriptionId();
+		MutableComponent result = Component.empty();
+		result.append(Component.translatable(id).withStyle(ChatFormatting.YELLOW));
+		id += ".description";
+		if(I18n.exists(id)) {
+			result.append("\n").append(Component.translatable(id).withStyle(ChatFormatting.GRAY));
+		}
+		return result;
+	}
+	@Override
+	public DataType getDataType() { return entry.getType(); }
+	@Override
+	public boolean isForcingSuggestions() { return false; }
+	@Override
+	public List<Suggestion> getSuggestions() { return ObjectLists.empty(); }
 }

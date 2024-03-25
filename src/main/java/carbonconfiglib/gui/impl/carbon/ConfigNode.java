@@ -44,11 +44,6 @@ public class ConfigNode implements IConfigFolderNode
 				children.add(new ConfigNode(sub));
 			}
 			for(ConfigEntry<?> entry : section.getEntries()) {
-				if(!entry.isNotHidden()) continue;
-				if(entry.getDataType().isCompound()) {
-					children.add(new ConfigCompoundLeaf(entry));
-					continue;
-				}
 				children.add(new ConfigLeaf(entry));
 			}
 		}
